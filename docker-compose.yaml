@@ -28,8 +28,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - TAVILY_API_KEY=${TAVILY_API_KEY}
       - EMBEDDINGS=${EMBEDDINGS}
-    # command: ["/app/.venv/bin/streamlit", "run", "chat_chart_react.py", "--server.port", "${STREAMLIT_SERVER_PORT}", "--server.address", "${STREAMLIT_SERVER_ADDRESS}"]
-    command: ["/opt/venv/bin/streamlit", "run", "chat_chart_react.py", "--server.port", "${STREAMLIT_SERVER_PORT}", "--server.address", "${STREAMLIT_SERVER_ADDRESS}"]
+    command: ["/opt/venv/bin/streamlit", "run", "streamlit_assistant.py", "--server.port", "${STREAMLIT_SERVER_PORT}", "--server.address", "${STREAMLIT_SERVER_ADDRESS}"]
     
     init: true
     tty: true

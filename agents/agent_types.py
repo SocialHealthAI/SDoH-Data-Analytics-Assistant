@@ -17,7 +17,14 @@ try:
 except Exception:
     ChatGroq = None  # type: ignore
 
-
+# 
+# Notes on Structured Agent Tests
+# 
+# ZERO_SHOT_REACT_DESCRIPTION does not support multiple input tools like analyze_neighborhood
+# STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION works with llama-3.3-70b-versatile
+# STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION works fails to terminate using llama-3.1-8b-instant
+# CHAT_CONVERSATIONAL_REACT_DESCRIPTION using llama-3.1-8b-instant
+#
 class StructuredChatAgent:
 
     def __init__(

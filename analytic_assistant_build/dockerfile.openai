@@ -76,4 +76,4 @@ VOLUME ["/hf_cache"]
 EXPOSE 8052
 
 # Default command
-CMD ["streamlit", "run", "agents/chat_chart_react.py", "--server.port", "8052", "--server.address", "0.0.0.0"]
+CMD ["streamlit", "run", "agents/streamlit_assistant.py", "--server.port", "8052", "--server.address", "0.0.0.0"]

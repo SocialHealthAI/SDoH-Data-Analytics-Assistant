@@ -59,26 +59,82 @@ flowchart LR
 
 The assistant is implemented as a Streamlit chat app using a LangChain ReAct agent. The agent iteratively reasons and acts to solve tasks: it selects tools, executes them, observes the results, and continues until it produces a final answer.
 
-The assistant implements the following tools:
+The Data Analytics Assistant tools are shown below.
 
-1. **sql\_db\_list\_tables** – Lists all tables in the database.
+```mermaid
+%%{init: { "themeVariables": { "fontSize": "10px" } }}%%
+graph LR
 
-2. **sql\_db\_schema** – Shows the schema and sample rows for specific tables.
+%% Nodes
+User(["User"])
+LLM["LLM"]
 
-3. **database\_column\_descriptions** – Finds relevant tables and columns using natural-language descriptions.
+SchemaQueryTools["sql_db tools"]
+DataDictionaryTool["database_column_descriptions"]
+OSMTool["analyze_neighborhood"]
+SearchTool["search_tool"]
 
-4. **sql\_db\_query\_checker** – Validates SQL queries before execution.
+MapTool[/"mapdata_tool"/]
+ChartTool[/"generate_chart"/]
 
-5. **sql\_db\_query** – Executes validated SQL queries.
+SDOHDatabase[("SDOH Database")]
+SDOHDictionary[("SDOH Dictionary")]
 
-6. **sql\_db\_list\_statistical\_functions** – Lists statistical functions defined in the database.
+OpenStreetMap(("Open Street Map"))
+SearchEngine(("Search Engine"))
 
-7. **calculator** – Performs math calculations.
+%% Flow
+User --> LLM
 
-8. **generate\_chart** – Generates matplotlib chart code from natural-language prompts.
+LLM --> SchemaQueryTools
+LLM --> DataDictionaryTool
+LLM --> OSMTool
+LLM --> SearchTool
+LLM --> MapTool
+LLM --> ChartTool
 
-9. **analyze\_neighborhood** – Analyzes geographic points and SDOH-related metric groups.
+SchemaQueryTools -- "queries" --> SDOHDatabase
+DataDictionaryTool -- "references" --> SDOHDictionary
+OSMTool -- "geospatial data" --> OpenStreetMap
+SearchTool -- "web search" --> SearchEngine
 
-10. **mapdata\_tool** – Converts geographic features into map-ready structures.
+%% Classes
+class User user;
+class LLM llm;
 
-11. **search\_tool** – Searches the internet when enabled (optional; see **Tailoring the Configuration**).
+class SchemaQueryTools,DataDictionaryTool,OSMTool,SearchTool tools;
+class MapTool,ChartTool output;
+
+class SDOHDatabase,SDOHDictionary data;
+class OpenStreetMap,SearchEngine internet;
+
+%% Styles
+classDef user fill:#E0E0E0,stroke:#555,stroke-width:1px;
+classDef llm fill:#CFE2FF,stroke:#2457A6,stroke-width:2px;
+
+classDef tools fill:#DFF2E1,stroke:#2F7D4C,stroke-width:1px;
+classDef data fill:#FFE0B2,stroke:#C77700,stroke-width:1px;
+
+classDef internet fill:#E6D9FF,stroke:#6A4BC4,stroke-width:1px;
+classDef output fill:#D9F6FF,stroke:#1B8CA6,stroke-width:1px;
+```
+
+1. **sql_db_list_tables** – Lists all tables in the database.
+
+2. **sql_db_schema** – Shows the schema and sample rows for specific tables.
+
+3. **database_column_descriptions** – Finds relevant tables and columns using natural-language descriptions.
+
+4. **sql_db_query_checker** – Validates SQL queries before execution.
+
+5. **sql_db_query** – Executes validated SQL queries.
+
+6. **sql_db_list_statistical_functions** – Lists statistical functions defined in the database.
+
+7. **generate_chart** – Generates matplotlib chart code from natural-language prompts.
+
+8. **analyze_neighborhood** – Analyzes geographic points and SDOH-related metric groups.
+
+9. **mapdata_tool** – Converts geographic features into map-ready structures.
+
+10. **search_tool** – Searches the internet when enabled (optional; see **Tailoring the Configuration**).

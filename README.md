@@ -98,6 +98,8 @@ Search for features centered on Batavia Ohio that are important to social determ
 Map ready. The app will render the interactive map.
 ![map1.png](./documentation/image/map1.png)
 
+An Audit Assistant is also available to review the results of Data Analytics Assistant.  The Audit Assistant reviews the query and the intermediate steps and final answer for problems and possible improvements.
+
 ### Architecture
 See [architecture.md](./documentation/architecture.md) for diagrams and component descriptions.
 

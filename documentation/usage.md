@@ -1,9 +1,11 @@
 ## Usage
-Start a new instance of the assistant using:
+Start a new instance of the Data Analytics Assistant using:
 ```
 http://localhost:8052
 ```
 The assistant starts with a default prompt describing its capabilities.  When entering a prompt, use **Ctrl+Enter** to send the request.  The assistant shows the intermediate steps and the final answer.
+
+After the final answer you can run the Audit Assistant to review the process and final answer.  Select the **Run Audit** button.
 
 The demo database is loaded from surveys on Social Determinants of Health (SDOH) from the [Agency for Healthcare Research and Quality](https://www.ahrq.gov/sdoh/data-analytics/sdoh-data.html). Metrics are provided by county, state and year (2017 - 2020).  You can [download data and codebooks](https://www.ahrq.gov/sdoh/data-analytics/sdoh-data.html#download) and documentation on [data sources](https://www.ahrq.gov/sites/default/files/wysiwyg/sdoh/SDOH-Data-Sources-Documentation-v1-Final.pdf) is available. You can ask the assistant to find metrics using descriptions.  Note that only columns that apply to SDOH are loaded.  You can use the CSV file at **da-assistant/etl-notebooks/dictionary.csv** as a reference.
 
