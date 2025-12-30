@@ -59,82 +59,100 @@ flowchart LR
 
 The assistant is implemented as a Streamlit chat app using a LangChain ReAct agent. The agent iteratively reasons and acts to solve tasks: it selects tools, executes them, observes the results, and continues until it produces a final answer.
 
-The Data Analytics Assistant tools are shown below.
+The Data Analytics Assistant architecture is shown below.  The Assistant is implemented as a Streamlit LangChain application.  The application manages the flow between the user, an LLM and tools.  When the final response is produced the application provides an option to audit the process using a different LLM.
+
 
 ```mermaid
-%%{init: { "themeVariables": { "fontSize": "10px" } }}%%
-graph LR
+%%{init: { 
+  "themeVariables": { 
+    "fontSize": "14px",
+    "nodeSpacing": 28,
+    "rankSpacing": 50
+  } 
+}}%%
+graph TB
 
-%% Nodes
+%% --- Core vertical governance stack ---
+AssistantLLM["Assistant<br/>LLM"]
+App["Streamlit<br/>LangChain App"]
+AuditLLM["Audit<br/>LLM"]
+
+AssistantLLM <--> App
+App <--> AuditLLM
+
+%% --- User (close to app, no container) ---
 User(["User"])
-LLM["LLM"]
+User <--> App
 
-SchemaQueryTools["sql_db tools"]
-DataDictionaryTool["database_column_descriptions"]
-OSMTool["analyze_neighborhood"]
-SearchTool["search_tool"]
+%% --- Tools container (rightward fan-out) ---
+subgraph Tools["Tools"]
+direction LR
+SchemaQueryTools["Schema, Query &<br/>Statistics Tools"]
+DataDictionaryTool["Data Dictionary<br/>Tool"]
+MCPTool["MCP<br/>Tool"]
+ChartMapTools["Chart & Map<br/>Generation Tools"]
+end
 
-MapTool[/"mapdata_tool"/]
-ChartTool[/"generate_chart"/]
+App <--> SchemaQueryTools
+App <--> DataDictionaryTool
+App <--> MCPTool
+App <--> ChartMapTools
 
-SDOHDatabase[("SDOH Database")]
-SDOHDictionary[("SDOH Dictionary")]
+%% --- Data sources ---
+SDOHDatabase[("SDOH<br/>Database")]
+SDOHDictionary[("SDOH<br/>Dictionary")]
+OpenStreetMap(("MCP Server<br/>OpenStreetMap<br/>Tools"))
 
-OpenStreetMap(("Open Street Map"))
-SearchEngine(("Search Engine"))
+SchemaQueryTools <--> SDOHDatabase
+DataDictionaryTool <--> SDOHDictionary
+MCPTool <--> OpenStreetMap
 
-%% Flow
-User --> LLM
-
-LLM --> SchemaQueryTools
-LLM --> DataDictionaryTool
-LLM --> OSMTool
-LLM --> SearchTool
-LLM --> MapTool
-LLM --> ChartTool
-
-SchemaQueryTools -- "queries" --> SDOHDatabase
-DataDictionaryTool -- "references" --> SDOHDictionary
-OSMTool -- "geospatial data" --> OpenStreetMap
-SearchTool -- "web search" --> SearchEngine
-
-%% Classes
-class User user;
-class LLM llm;
-
-class SchemaQueryTools,DataDictionaryTool,OSMTool,SearchTool tools;
-class MapTool,ChartTool output;
-
-class SDOHDatabase,SDOHDictionary data;
-class OpenStreetMap,SearchEngine internet;
-
-%% Styles
+%% --- Styles ---
 classDef user fill:#E0E0E0,stroke:#555,stroke-width:1px;
+classDef app fill:#E8F0FE,stroke:#5B7BD5,stroke-width:1px;
 classDef llm fill:#CFE2FF,stroke:#2457A6,stroke-width:2px;
-
 classDef tools fill:#DFF2E1,stroke:#2F7D4C,stroke-width:1px;
 classDef data fill:#FFE0B2,stroke:#C77700,stroke-width:1px;
 
-classDef internet fill:#E6D9FF,stroke:#6A4BC4,stroke-width:1px;
-classDef output fill:#D9F6FF,stroke:#1B8CA6,stroke-width:1px;
+class User user;
+class App app;
+class AssistantLLM,AuditLLM llm;
+class SchemaQueryTools,DataDictionaryTool,MCPTool,ChartMapTools tools;
+class SDOHDatabase,SDOHDictionary,OpenStreetMap data;
+
 ```
+The LLM used as an assistant has access to the following tools.
 
-1. **sql_db_list_tables** – Lists all tables in the database.
+#### Schema, Query, and Statistics Tools
 
-2. **sql_db_schema** – Shows the schema and sample rows for specific tables.
+These tools provide controlled access to a PostgreSQL database. A demonstration database is provided containing Social Determinants of Health (SDOH) metrics derived from **American Community Survey (ACS)** data published by the U.S. Census Bureau.
 
-3. **database_column_descriptions** – Finds relevant tables and columns using natural-language descriptions.
+* **sql_db_list_tables** – Lists all tables in the database.
 
-4. **sql_db_query_checker** – Validates SQL queries before execution.
+* **sql_db_schema** – Shows schemas and sample rows for specified tables.
 
-5. **sql_db_query** – Executes validated SQL queries.
+* **sql_db_query_checker** – Validates SQL queries prior to execution.
 
-6. **sql_db_list_statistical_functions** – Lists statistical functions defined in the database.
+* **sql_db_query** – Executes validated SQL queries.
 
-7. **generate_chart** – Generates matplotlib chart code from natural-language prompts.
+* **sql_db_list_statistical_functions** – Lists statistical functions defined in the database.
 
-8. **analyze_neighborhood** – Analyzes geographic points and SDOH-related metric groups.
+#### Data Dictionary Tool
 
-9. **mapdata_tool** – Converts geographic features into map-ready structures.
+The **database_column_descriptions** tool identifies relevant tables and columns using natural-language descriptions. The dictionary is implemented as a vector database of embeddings. The demonstration is based on a dictionary of American Community Survey (ACS) metrics.
 
-10. **search_tool** – Searches the internet when enabled (optional; see **Tailoring the Configuration**).
+#### MCP Tool
+
+The MCP Tool is a generalized interface that communicates with tools exposed by an MCP server. The MCP server provides tools for retrieving and analyzing geospatial data from OpenStreetMap.
+
+A demonstration tool, **analyze_neighborhood**, returns Social Determinants of Health–related geographic features within a specified distance of a geographic center.
+
+### Chart & Map Generation Tools
+
+The application renders charts and maps using data produced by multiple tools.
+
+* **generate_chart** – Generates matplotlib chart code from natural-language prompts.
+
+* **mapdata_tool** – Converts OpenStreetMap-derived data into a structure suitable for rendering Leaflet maps.
+
+
