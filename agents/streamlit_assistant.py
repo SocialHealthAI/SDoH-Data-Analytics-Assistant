@@ -62,15 +62,18 @@ for msg in st.session_state.messages:
 # Get user input
 #
 prompt = st.text_area(
-    "Enter a data analysis request: (Ctrl Enter to send request)",
-    value="Briefly, how would an analyst use prompts to understand relationships and trends in SDOH data and SDOH factors by geography?  Do not give detail on tools. Present as if you were talking to an analyst and ask them to enter a query.",
+    "Enter a data analysis request and hit Submit",
+    value="Very briefly, how can you help analyze the database and geographic features using statistical methods and visualizations?",
     height=200,
 )
+
+# Add a submit button to explicitly control when the agent runs
+submit_button = st.button("Submit Request", type="secondary")
 
 #
 # Write response, run chart if generated, render map if map data
 #
-if prompt:
+if submit_button and prompt:
     with st.spinner("Working on it..."):
         try:
             #
