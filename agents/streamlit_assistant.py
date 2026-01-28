@@ -3,6 +3,7 @@ Data Analytics Assistant - Main Streamlit Application
 """
 import streamlit as st
 import os
+import re
 
 from react_agent import ReActAgent
 from audit_agent import AuditAgent
@@ -42,120 +43,141 @@ map_renderer = MapRenderer(icon_mapping_path="feature_group_icons.json")
 chart_renderer = ChartRenderer()
 
 ##############################################################
-#   Streamlit App
+#   Streamlit App Logic
 ##############################################################
 
-# Title
+def escape_markdown(text):
+    """Escape markdown special characters but preserve tables and intentional formatting."""
+    # Escape lines that are purely === or --- (common in statistical output)
+    text = re.sub(r'^(=+)$', r'\\\1', text, flags=re.MULTILINE)
+    text = re.sub(r'^(-+)$', r'\\\1', text, flags=re.MULTILINE)
+    
+    # Escape lines that start with *** or ___ (alternative horizontal rules)
+    text = re.sub(r'^(\*{3,})$', r'\\\1', text, flags=re.MULTILINE)
+    text = re.sub(r'^(_{3,})$', r'\\\1', text, flags=re.MULTILINE)
+    
+    # Escape # at start of lines (headers)
+    text = re.sub(r'^(#{1,6})\s', r'\\\1 ', text, flags=re.MULTILINE)
+    
+    return text
+
+
 st.title("🧠 Data Analytics Assistant")
 
-#
-# Check or reset message history then show all past messages
-#
-if "messages" not in st.session_state or st.sidebar.button("Clear message history"):
+# Initialize Session State
+if "messages" not in st.session_state:
     st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+if "last_result" not in st.session_state:
     st.session_state["last_result"] = None
+if "show_audit" not in st.session_state:
+    st.session_state["show_audit"] = False
+if "show_steps" not in st.session_state:
+    st.session_state["show_steps"] = False
 
-for msg in st.session_state.messages:
-    st.write(f"**{msg['role'].capitalize()}:** {msg['content']}")
+# --- SIDEBAR ---
+with st.sidebar:
+    st.header("Controls")
+    
+    if st.button("Clear message history", use_container_width=True):
+        st.session_state["messages"] = [{"role": "assistant", "content": "How can I help you?"}]
+        st.session_state["last_result"] = None
+        st.session_state["show_audit"] = False
+        st.session_state["show_steps"] = False
+        st.rerun()
 
-#
-# Get user input
-#
-prompt = st.text_area(
-    "Enter a data analysis request and hit Submit",
-    value="Very briefly, how can you help analyze the database and geographic features using statistical methods and visualizations?",
-    height=200,
-)
-
-# Add a submit button to explicitly control when the agent runs
-submit_button = st.button("Submit Request", type="secondary")
-
-#
-# Write response, run chart if generated, render map if map data
-#
-if submit_button and prompt:
-    with st.spinner("Working on it..."):
-        try:
-            #
-            # Write the input to messages
-            #
-            st.session_state.messages.append({"role": "user", "content": prompt})
-
-            #
-            # Run the agent and get the response and intermediate steps
-            #
-            result = agent.run(prompt) 
-            intermediate_steps = result.get("intermediate_steps", [])
-            final_output = result.get("output", "")
+    if st.session_state["last_result"] is not None:
+        st.divider()
+        st.subheader("Analysis Tools")
+        
+        # Toggle buttons
+        if st.button("🧩 View Logic Steps", use_container_width=True):
+            st.session_state["show_steps"] = not st.session_state["show_steps"]
+            st.session_state["show_audit"] = False
             
-            # Store result for audit
+        if st.button("🔍 Run Audit", type="secondary", use_container_width=True):
+            st.session_state["show_audit"] = True
+            st.session_state["show_steps"] = False
+
+# --- MAIN CHAT AREA ---
+
+# 1. Display Message History
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# 2. PERSISTENT CHART RENDERING
+if st.session_state["last_result"] and st.session_state["last_result"].get("chart_code"):
+    chart_code = st.session_state["last_result"]["chart_code"]
+    explanation = st.session_state["last_result"]["result"].get("explanation")
+    chart_renderer.render_from_code(chart_code, explanation=None)
+
+# 3. Logic Steps Display with Header
+if st.session_state["show_steps"] and st.session_state["last_result"]:
+    st.divider()
+    st.header("🧩 Logic Steps")
+    steps = st.session_state["last_result"]["result"].get("intermediate_steps", [])
+    
+    for i, step in enumerate(steps):
+        with st.expander(f"Step {i+1}: {step[0].tool}", expanded=True):
+            st.markdown(f"**Action Input:** `{step[0].tool_input}`")
+            obs = str(step[1])
+            if len(obs.splitlines()) > 5:
+                obs = "\n".join(obs.splitlines()[:5]) + "\n... (truncated)"
+            st.code(obs)
+
+# 4. Audit Display
+if st.session_state["show_audit"] and st.session_state["last_result"]:
+    st.divider()
+    last = st.session_state["last_result"]
+    with st.spinner("Conducting audit..."):
+        try:
+            st.subheader("🔍 Audit Report")
+            audit_report = audit_agent.audit(
+                tool_descriptions=last["tool_descriptions"],
+                user_prompt=last["prompt"],
+                intermediate_steps=last["result"].get("intermediate_steps", []),
+                final_answer=last["result"].get("output", "")
+            )
+            st.markdown(audit_report)
+            st.caption(f"*Audited by: {audit_agent.llm.model_name}*")
+        except Exception as e:
+            st.error(f"Audit failed: {e}")
+
+# --- INPUT AREA ---
+
+prompt = st.chat_input("Ask me about SDoH topics in the database")
+
+if prompt:
+    st.session_state["show_audit"] = False
+    st.session_state["show_steps"] = False
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    with st.spinner("Processing..."):
+        try:
+            result = agent.run(prompt)
+            
+            # Capture the chart code IMMEDIATELY before rerunning
+            chart_tool = agent.get_chart_tool()
+            saved_chart_code = None
+            
+            if chart_tool and hasattr(chart_tool, '_latest_result'):
+                latest_result = chart_tool._latest_result
+                if latest_result:
+                    saved_chart_code = latest_result.get("code_block")
+            
             st.session_state["last_result"] = {
                 "prompt": prompt,
                 "result": result,
-                "tool_descriptions": agent.get_tool_descriptions_text()
+                "tool_descriptions": agent.get_tool_descriptions_text(),
+                "chart_code": saved_chart_code  # This should now have the actual code!
             }
             
-            #
-            # Show the intermediate steps
-            #
-            if intermediate_steps:
-                st.subheader("🧩 Intermediate Reasoning Steps")
-                for i, step in enumerate(intermediate_steps):
-                    st.markdown(f"**Step {i+1}:**")
-                    st.markdown(f"- **Action:** `{step[0].tool}`")
-                    st.markdown(f"- **Tool Input:** `{step[0].tool_input}`")
-                    # Trim observations longer than 5 lines and append notice
-                    obs = step[1]
-                    obs_lines = str(obs).splitlines()
-                    if len(obs_lines) > 5:
-                        obs = "\n".join(obs_lines[:5]) + "\n......trimmed to 5 lines"
-                    st.markdown(f"- **Observation:**")
-                    st.code(obs)
-            
-            #
-            #  Add the response to history
-            #
-            st.session_state.messages.append({"role": "assistant", "content": final_output})
-            
-            #
-            # Show the response
-            #
-            st.subheader("💬 Final Answer")
-            st.markdown(final_output)
-            
-            #
-            # If chart code was generated, render it
-            #
-            chart_tool = agent.get_chart_tool()
-            chart_renderer.render_from_tool(chart_tool)
+            st.session_state.messages.append({
+                "role": "assistant", 
+                "content": escape_markdown(result.get("output", ""))
+            })
 
+            st.rerun()
+            
         except Exception as e:
-            st.error(f"An error occurred: {e}")
-                        
-    #
-    # If map data was generated, render map (outside spinner)
-    #
-    map_tool = agent.get_map_tool()
-    map_renderer.render_from_tool(map_tool)
-
-#
-# Audit button - only show if there's a result to audit
-#
-if st.session_state.get("last_result") is not None:
-    st.divider()
-    if st.button("🔍 Run Audit", type="primary"):
-        last = st.session_state["last_result"]
-        
-        with st.spinner("Conducting audit..."):
-            try:
-                st.subheader("🔍 Audit Report")
-                audit_report = audit_agent.audit(
-                    tool_descriptions=last["tool_descriptions"],
-                    user_prompt=last["prompt"],
-                    intermediate_steps=last["result"].get("intermediate_steps", []),
-                    final_answer=last["result"].get("output", "")
-                )
-                st.markdown(audit_report)
-                st.caption(f"*Audited by: {audit_agent.llm.model_name}*")
-            except Exception as audit_error:
-                st.error(f"Audit failed: {audit_error}")
+            st.error(f"Error: {e}")

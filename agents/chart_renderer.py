@@ -12,26 +12,22 @@ from langchain_experimental.utilities import PythonREPL
 class ChartRenderer:
     """Handles chart rendering from generated code."""
 
-    @staticmethod
-    def render_from_tool(chart_tool):
+    def render_from_code(self, code_block, explanation=None):
         """
-        Execute and display chart code if available from the chart tool.
+        Execute chart code.
 
         Args:
-            chart_tool: The chart tool instance that may contain generated chart code
+            code_block: chart code string
+            explanation: optional explanation text to display above chart
         """
-        if not hasattr(chart_tool, "_latest_result") or not chart_tool._latest_result:
-            return
-
-        result = chart_tool._latest_result
-        code_block = result.get("code_block")
-
         if not code_block:
             st.info("No chart code was generated in the response.")
             return
 
         st.subheader("📊 Chart")
-        st.markdown(result.get("explanation"))
+        
+        if explanation:
+            st.markdown(explanation)
 
         try:
             # Reset matplotlib state
