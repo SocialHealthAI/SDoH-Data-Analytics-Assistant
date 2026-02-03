@@ -26,7 +26,25 @@ def get_chart_langchain_tool(llm):
 
 class ChartTool(BaseTool):
     name: ClassVar[str] = "generate_chart"
-    description: ClassVar[str] = """Generate matplotlib chart code from natural language descriptions. Accepts optional structured data or csv fields. Returns code only, not images"""
+    description: ClassVar[str] = """Generate matplotlib chart code from natural language descriptions.
+        ⚠️ CRITICAL REQUIREMENTS:
+        1. This tool CANNOT fetch data - it only generates plotting code
+        2. This tool CANNOT use pandas DataFrames
+        3. You MUST pass actual data via 'csv' or 'data' parameter - DO NOT use user_input to describe data structure
+
+        CORRECT WORKFLOW:
+        Step 1: Fetch data using get_observations or other data tools
+        Step 2: Extract the data values from tool outputs
+        Step 3: Call generate_chart with:
+        - user_input: Chart styling only (e.g., "scatter plot, gray markers, grid, title 'Obesity vs Poverty'")
+        - csv: Actual data as CSV string (e.g., "Place,Obesity,Poverty\\nCounty1,30.2,12.3\\nCounty2,28.5,15.1\\n...")
+            OR
+        - data: Actual data as structured dict (e.g., {"Place": ["County1", "County2"], "Obesity": [30.2, 28.5], "Poverty": [12.3, 15.1]})
+
+        WRONG - Never do this:
+        generate_chart(user_input="assume df exists with columns X, Y, Z...")
+
+        Returns: Self-contained Python/matplotlib code (not images)."""
     args_schema: ClassVar[Type[BaseModel]] = ChartToolInput
 
     llm: object = Field(..., description="The LLM to use for chart generation")
@@ -36,24 +54,25 @@ class ChartTool(BaseTool):
     def __init__(self, llm: object, **kwargs):
         super().__init__(llm=llm, **kwargs)
         self._chart_prompt_template = PromptTemplate.from_template("""
-You generate Python code using only the matplotlib library to create a chart based on the user's request.
-You do not generate chart images, image markdown or data URIs.
+            You generate Python code using only the matplotlib library to create a chart based on the user's request.
+            You do not generate chart images, image markdown or data URIs.
 
-CRITICAL REQUIREMENTS:
-- If DATA is provided below, you MUST use that EXACT data in your code - do NOT create example/placeholder data
-- Use inline data unless the user explicitly asks for data files or Pandas
-- Do not use plt.show() or plt.savefig()
-- Do not save the plot to a file
-- Use only safe, standard plotting code
-- Do not import or access unsafe libraries (e.g., os, sys, subprocess)
-- Begin with a short explanation of what the chart shows
-- Follow the explanation with a valid Python code block enclosed in triple backticks
-- Examples of forbidden content: "![...](data:image/png;base64,...)", "data:image/png;base64,..." or any other embedded base64 image
+            CRITICAL REQUIREMENTS:
+            - Generate self-contained code with all data defined inline as Python lists/variables
+            - NEVER assume external variables (like 'df') will be provided
+            - If data is provided in the DATA section below, include it as inline variable definitions - do NOT create example/placeholder data
+            - Do not use plt.show() or plt.savefig()
+            - Do not save the plot to a file
+            - Use only safe, standard plotting code
+            - Do not import or access unsafe libraries (e.g., os, sys, subprocess)
+            - Begin with a short explanation of what the chart shows
+            - Follow the explanation with a valid Python code block enclosed in triple backticks
+            - Examples of forbidden content: "![...](data:image/png;base64,...)", "data:image/png;base64,..." or any other embedded base64 image
 
-{data_instruction}
+            {data_instruction}
 
-User request: {user_input}
-""")
+            User request: {user_input}
+            """)
 
     def _normalize_data(self, data: Dict[str, Any]) -> Optional[Dict[str, List]]:
         """

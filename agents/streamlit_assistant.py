@@ -106,10 +106,12 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # 2. PERSISTENT CHART RENDERING
+# Only render if we're not showing steps or audit (which would interfere)
 if st.session_state["last_result"] and st.session_state["last_result"].get("chart_code"):
-    chart_code = st.session_state["last_result"]["chart_code"]
-    explanation = st.session_state["last_result"]["result"].get("explanation")
-    chart_renderer.render_from_code(chart_code, explanation=None)
+    if not st.session_state["show_steps"] and not st.session_state["show_audit"]:
+        chart_code = st.session_state["last_result"]["chart_code"]
+        explanation = st.session_state["last_result"]["result"].get("explanation")
+        chart_renderer.render_from_code(chart_code, explanation=None)
 
 # 3. Logic Steps Display with Header
 if st.session_state["show_steps"] and st.session_state["last_result"]:
