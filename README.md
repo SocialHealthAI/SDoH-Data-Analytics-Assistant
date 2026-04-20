@@ -1,6 +1,6 @@
-## Data Analytics Assistant
+## SDoH Data Analytics Assistant
 
-The **Data Analytics Assistant** is a chat application that helps analysts explore and analyze data. It uses a reasoning agent to interpret natural language queries, which can include selecting data from a database or fetching geographic data from Open Street Map. The assistant can perform statistical analyses, such as correlation, and generate visualizations using charts and maps.
+The **SDoH Data Analytics Assistant** is a chat application that helps analysts explore and analyze data. It uses a reasoning agent to interpret natural language queries, which can include selecting data from a database or fetching geographic data from Open Street Map. The assistant can perform statistical analyses, such as correlation, and generate visualizations using charts and maps.
 
 ### Quickstart
 To start the assistant with minimal setup:
@@ -9,8 +9,8 @@ To start the assistant with minimal setup:
 
 2. **Clone this repository:**
 ```
-   git clone https://github.com/SocialHealthAI/Data-Analytics-Assistant.git
-   cd (path to) Data-Analytics-Asssistant
+   git clone https://github.com/SocialHealthAI/SDoH-Data-Analytics-Assistant.git
+   cd SDoH-Data-Analytics-Assistant
 ```
 3. **Set your keys:** Edit the `.env` file and add your `OPENAI_API_KEY`.
 
@@ -98,7 +98,7 @@ Search for features centered on Batavia Ohio that are important to social determ
 Map ready. The app will render the interactive map.
 ![map1.png](./documentation/image/map1.png)
 
-An Audit Assistant is also available to review the results of Data Analytics Assistant.  The Audit Assistant reviews the query and the intermediate steps and final answer for problems and possible improvements.
+An Audit Assistant is also available to review the results of SDoH Data Analytics Assistant.  The Audit Assistant reviews the query and the intermediate steps and final answer for problems and possible improvements.
 
 ### Architecture
 See [architecture.md](./documentation/architecture.md) for diagrams and component descriptions.
@@ -110,4 +110,4 @@ See [usage.md](./documentation/usage.md) for example prompts and considerations.
 See [installation.md](./documentation/installation.md) for installation and configuration.
 
 #### What's Next?
-See the issues tagged as enhancements: [Issues · SocialHealthAI/Data-Analytics-Assistant](https://github.com/SocialHealthAI/Data-Analytics-Assistant/issues)
+See the issues tagged as enhancements: [Issues · SocialHealthAI/SDoH-Data-Analytics-Assistant](https://github.com/SocialHealthAI/SDoH-Data-Analytics-Assistant/issues)

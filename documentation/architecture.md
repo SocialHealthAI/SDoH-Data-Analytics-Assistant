@@ -59,7 +59,7 @@ flowchart LR
 
 The assistant is implemented as a Streamlit chat app using a LangChain ReAct agent. The agent iteratively reasons and acts to solve tasks: it selects tools, executes them, observes the results, and continues until it produces a final answer.
 
-The Data Analytics Assistant architecture is shown below.  The Assistant is implemented as a Streamlit LangChain application.  The application manages the flow between the user, an LLM and tools.  When the final response is produced the application provides an option to audit the process using a different LLM.
+The SDoH Data Analytics Assistant architecture is shown below.  The Assistant is implemented as a Streamlit LangChain application.  The application manages the flow between the user, an LLM and tools.  When the final response is produced the application provides an option to audit the process using a different LLM.
 
 
 ```mermaid

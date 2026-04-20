@@ -11,23 +11,29 @@ ENV DEBIAN_FRONTEND=noninteractive \
 WORKDIR ${APP_DIR}
 
 # Build-time apt deps (only in builder)
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-    build-essential curl git ca-certificates libgomp1 \
- && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    printf '%s\n' \
+      'Acquire::Retries "5";' \
+      'Acquire::http::Timeout "120";' \
+      'Acquire::https::Timeout "120";' \
+      > /etc/apt/apt.conf.d/80docker; \
+    find /etc/apt -type f \( -name '*.sources' -o -name 'sources.list' -o -name '*.list' \) \
+      -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      build-essential curl git ca-certificates libgomp1; \
+    rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install poetry into builder
 RUN python -m pip install --upgrade pip setuptools wheel \
- && pip install --no-cache-dir "poetry==1.4.2"
+ && pip install --no-cache-dir "poetry==1.8.5"
 
-# Copy lock files first for reproducible installs (cache-friendly)
-COPY analytic_assistant_build/pyproject.openai.toml poetry.lock* ${APP_DIR}/
+# Copy pyproject first for reproducible installs (cache-friendly)
+COPY analytic_assistant_build/pyproject.openai.toml ${APP_DIR}/
 
-# rename it to what Poetry expects
-RUN mv ${APP_DIR}/pyproject.openai.toml ${APP_DIR}/pyproject.toml
-
-# Export frozen requirements.txt (no-dev)
-RUN poetry export -f requirements.txt --without-hashes --without dev -o /tmp/requirements.txt
+RUN mv ${APP_DIR}/pyproject.openai.toml ${APP_DIR}/pyproject.toml \
+ && poetry lock --no-interaction \
+ && poetry export -f requirements.txt --without-hashes --without dev -o /tmp/requirements.txt
 
 # Create venv and install runtime dependencies into it.
 # Install PyTorch CPU-only wheel first (smaller) using the official CPU index,
@@ -58,9 +64,17 @@ ENV VIRTUAL_ENV=/opt/venv \
 WORKDIR ${APP_DIR}
 
 # Minimal runtime apt packages only
-RUN apt-get update \
- && apt-get install -y --no-install-recommends libgomp1 ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    printf '%s\n' \
+      'Acquire::Retries "5";' \
+      'Acquire::http::Timeout "120";' \
+      'Acquire::https::Timeout "120";' \
+      > /etc/apt/apt.conf.d/80docker; \
+    find /etc/apt -type f \( -name '*.sources' -o -name 'sources.list' -o -name '*.list' \) \
+      -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends libgomp1 ca-certificates; \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the prepared virtualenv from builder (installed deps incl. CPU torch)
 COPY --from=builder /opt/venv /opt/venv

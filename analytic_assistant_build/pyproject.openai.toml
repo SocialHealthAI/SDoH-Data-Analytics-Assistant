@@ -4,11 +4,12 @@ version = "0.1.0"
 description = ""
 authors = ["Tim Conkling <tconkling@gmail.com>", "Joshua Carroll <joshua.carroll@snowflake.com>"]
 license = "Apache 2.0"
-readme = "README.md"
-packages = [{include = "streamlit_agent"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
+# Keeps google/grpc stacks on protobuf 6.x; avoids poetry export walker error with 7.x
+protobuf = ">=6.31.1,<7.0.0"
 langchain = "^0.3.25"        
 openai = ">=1.6.1"
 duckduckgo-search = ">4.0"

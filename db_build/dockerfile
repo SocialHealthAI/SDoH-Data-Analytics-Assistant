@@ -2,12 +2,21 @@
 FROM postgres:16
 
 # Install PL/Python extension and Python scientific packages
-RUN apt-get update && \
-    apt-get install -y \
-    postgresql-plpython3-16 \
-    python3-numpy \
-    python3-scipy \
-    && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
+RUN set -eux; \
+    printf '%s\n' \
+      'Acquire::Retries "5";' \
+      'Acquire::http::Timeout "120";' \
+      'Acquire::https::Timeout "120";' \
+      > /etc/apt/apt.conf.d/80docker; \
+    find /etc/apt -type f \( -name '*.sources' -o -name 'sources.list' -o -name '*.list' \) \
+      -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      postgresql-plpython3-16 \
+      python3-numpy \
+      python3-scipy; \
+    rm -rf /var/lib/apt/lists/*
 
 # Verify installation
 RUN python3 -c "import scipy; import numpy; print('NumPy version:', numpy.__version__); print('SciPy version:', scipy.__version__)"

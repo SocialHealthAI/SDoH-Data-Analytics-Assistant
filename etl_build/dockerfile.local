@@ -2,9 +2,20 @@
 FROM python:3.11-slim-bookworm
 
 # System deps. Keep libgomp1 for sentence-transformers; build-essential present for any builds.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git curl libgomp1 libssl-dev libffi-dev pkg-config ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# Harden apt: HTTPS + retries (avoids flaky HTTP timeouts to deb.debian.org / CDN).
+ENV DEBIAN_FRONTEND=noninteractive
+RUN set -eux; \
+    printf '%s\n' \
+      'Acquire::Retries "5";' \
+      'Acquire::http::Timeout "120";' \
+      'Acquire::https::Timeout "120";' \
+      > /etc/apt/apt.conf.d/80docker; \
+    find /etc/apt -type f \( -name '*.sources' -o -name 'sources.list' -o -name '*.list' \) \
+      -exec sed -i 's|http://deb.debian.org|https://deb.debian.org|g' {} +; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      build-essential git curl libgomp1 libssl-dev libffi-dev pkg-config ca-certificates; \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
 

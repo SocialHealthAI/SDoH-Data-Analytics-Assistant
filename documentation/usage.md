@@ -1,5 +1,5 @@
 ## Usage
-Start a new instance of the Data Analytics Assistant using:
+Start a new instance of the SDoH Data Analytics Assistant using:
 ```
 http://localhost:8052
 ```

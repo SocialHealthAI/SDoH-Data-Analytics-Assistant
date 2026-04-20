@@ -210,10 +210,10 @@ async def app_lifespan(server: FastMCP) -> AsyncIterator[AppContext]:
         server.app_context = None
 
 # Create the MCP server.  Tools will be served at /api
+# (fastmcp>=2.14 removed the `dependencies=` constructor arg; declare packages in pyproject.toml / image instead.)
 mcp = FastMCP(
     "Location-Based App MCP Server",
-    dependencies=["aiohttp", "geojson", "shapely", "haversine"],
-    lifespan=app_lifespan      
+    lifespan=app_lifespan,
 )
 
 # add a slot for context

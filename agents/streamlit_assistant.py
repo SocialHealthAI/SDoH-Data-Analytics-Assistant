@@ -1,5 +1,5 @@
 """
-Data Analytics Assistant - Main Streamlit Application
+SDoH Data Analytics Assistant - Main Streamlit Application
 """
 import streamlit as st
 import os
@@ -9,6 +9,8 @@ from react_agent import ReActAgent
 from audit_agent import AuditAgent
 from map_renderer import MapRenderer
 from chart_renderer import ChartRenderer
+
+st.set_page_config(page_title="SDoH Data Analytics Assistant")
 
 ##############################################################
 #   Set up agent
@@ -62,7 +64,7 @@ def escape_markdown(text):
     return text
 
 
-st.title("🧠 Data Analytics Assistant")
+st.title("🧠 SDoH Data Analytics Assistant")
 
 # Initialize Session State
 if "messages" not in st.session_state:
