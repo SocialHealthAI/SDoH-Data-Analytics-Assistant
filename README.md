@@ -1,6 +1,10 @@
 ## SDoH Data Analytics Assistant
 
-The **SDoH Data Analytics Assistant** is a chat application that helps analysts explore and analyze data. It uses a reasoning agent to interpret natural language queries, which can include selecting data from a database or fetching geographic data from Open Street Map. The assistant can perform statistical analyses, such as correlation, and generate visualizations using charts and maps.
+The SDoH Data Analytics Assistant is an AI-powered chat application that helps analysts explore, analyze, and visualize data using natural language queries.
+
+The assistant combines database analytics, OpenStreetMap geographic data retrieval, statistical analysis, and visualization into a single conversational interface. Users can ask questions in plain language, and the assistant uses a reasoning agent to interpret requests, retrieve relevant data, and generate analytical outputs.
+
+The assistant is installed with demonstration Social Determinants of Health (SDoH) datasets, making it useful for research, public health, and community analytics scenarios out of the box. It can also be configured to work with your own datasets.
 
 ### Quickstart
 To start the assistant with minimal setup:
